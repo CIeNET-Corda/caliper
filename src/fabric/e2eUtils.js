@@ -208,7 +208,7 @@ function buildChaincodeProposal(client, the_user, chaincode, upgrade, transientM
  * @return {Promise} The return promise.
  */
 function instantiateChaincode(chaincode, endorsement_policy, upgrade){
-    Client.setConfigSetting('request-timeout', 120000);
+    Client.setConfigSetting('request-timeout', 240000);
 
     let channel = testUtil.getChannel(chaincode.channel);
     if(channel === null) {
