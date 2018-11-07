@@ -38,6 +38,11 @@ class Blockchain {
             this.bcType = 'composer';
             this.bcObj = new composer(configPath);
         }
+        else if(config.hasOwnProperty('corda')) {
+            let corda = require('../corda/corda.js');
+            this.bcType = 'corda';
+            this.bcObj = new corda(configPath);
+        }
         else {
             this.bcType = 'unknown';
             throw new Error('Unknown blockchain config file ' + configPath);

@@ -1,0 +1,45 @@
+{
+  "blockchain": {
+    "type": "corda",
+    "config": "benchmark/simple/corda.json"
+  },
+  "command" : {
+    "start": "docker-compose -f ../number-portability-cordapp/src/main/docker/docker-compose.yml up -d",
+    "end" : "docker-compose -f ../number-portability-cordapp/src/main/docker/docker-compose.yml down;docker rm $(docker ps -aq)"
+  },
+  "test": {
+    "name": "simple",
+    "description" : "This is an example benchmark for caliper, to test the backend DLT's performance with simple account opening & querying transactions",
+    "clients": {
+      "type": "local",
+      "number": 5
+    },
+    "rounds": [{
+        "label" : "open",
+        "txNumber" : [1000, 1000, 1000],
+        "rateControl" : [{"type": "fixed-rate", "opts": {"tps" : 50}}, {"type": "fixed-rate", "opts": {"tps" : 100}}, {"type": "fixed-rate", "opts": {"tps" : 150}}],
+        "arguments": { "money": 10000 },
+        "callback" : "benchmark/simple/open.js"
+      },
+      {
+        "label" : "query",
+        "txNumber" : [5000, 5000],
+        "rateControl" : [{"type": "fixed-rate", "opts": {"tps" : 100}}, {"type": "fixed-rate", "opts": {"tps" : 200}}],
+        "callback" : "benchmark/simple/query.js"
+      }]
+  },
+  "monitor": {
+    "type": ["docker", "process"],
+    "docker":{
+      "name": ["all"]
+    },
+    "process": [
+      {
+        "command" : "node",
+        "arguments" : "local-client.js",
+        "multiOutput" : "avg"
+      }
+    ],
+    "interval": 1
+  }
+}
