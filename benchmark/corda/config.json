@@ -1,7 +1,7 @@
 {
   "blockchain": {
     "type": "corda",
-    "config": "benchmark/simple/corda.json"
+    "config": "benchmark/corda/corda.json"
   },
   "command" : {
     "start": "docker-compose -f ../number-portability-cordapp/src/main/docker/docker-compose.yml up -d",
@@ -9,23 +9,35 @@
   },
   "test": {
     "name": "simple",
-    "description" : "This is an example benchmark for caliper, to test the backend DLT's performance with simple account opening & querying transactions",
+    "description" : "This is an example benchmark for Corda, to test the performance with iou & querying transactions",
     "clients": {
       "type": "local",
       "number": 5
     },
     "rounds": [{
-        "label" : "open",
+        "label" : "iou",
         "txNumber" : [1000, 1000, 1000],
         "rateControl" : [{"type": "fixed-rate", "opts": {"tps" : 50}}, {"type": "fixed-rate", "opts": {"tps" : 100}}, {"type": "fixed-rate", "opts": {"tps" : 150}}],
-        "arguments": { "money": 10000 },
-        "callback" : "benchmark/simple/open.js"
+        "arguments": {
+          "money": 10000 ,
+          "parties": [
+            "CMCC",
+            "CUCC",
+            "CTCC"
+          ]},
+        "callback" : "benchmark/corda/iou.js"
       },
       {
         "label" : "query",
         "txNumber" : [5000, 5000],
         "rateControl" : [{"type": "fixed-rate", "opts": {"tps" : 100}}, {"type": "fixed-rate", "opts": {"tps" : 200}}],
-        "callback" : "benchmark/simple/query.js"
+        "arguments": {
+          "parties": [
+            "CMCC",
+            "CUCC",
+            "CTCC"
+          ]},
+        "callback" : "benchmark/corda/query.js"
       }]
   },
   "monitor": {

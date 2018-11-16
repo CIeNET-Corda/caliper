@@ -21,6 +21,7 @@ class Corda extends BlockchainInterface{
      * @param {string} config_path The path of the Corda network configuration file.
      */
     constructor(config_path) {
+        // commUtils.log('==== Corda ==== config_path:', config_path);
         super(config_path);
     }
 
@@ -29,7 +30,7 @@ class Corda extends BlockchainInterface{
      * @return {Promise} The return promise.
      */
     init() {
-        commUtils.log('==== Corda ==== init');
+        // commUtils.log('==== Corda ==== init');
         return Promise.resolve();
     }
 
@@ -74,10 +75,13 @@ class Corda extends BlockchainInterface{
      * @return {Promise<object>} The promise for the result of the execution.
      */
     invokeSmartContract(context, contractID, contractVer, args, timeout) {
-        commUtils.log('==== Corda ==== invokeSmartContract', contractID, contractVer, args, args.length, timeout);
+        // commUtils.log('==== Corda ==== invokeSmartContract', contractID, contractVer, args, args.length, timeout);
         // TODO add grpc logic here for issue token.
         let promises = [];
         for (let i=0; i<args.length; i++) {
+            if(context.engine) {
+                context.engine.submitCallback(1);
+            }
             let txID = args[i].account + Date.now().toString();
             let txStatus = new TxStatus(txID);
             txStatus.SetFlag(0);
@@ -103,8 +107,11 @@ class Corda extends BlockchainInterface{
      * @return {Promise<object>} The promise for the result of the execution.
      */
     queryState(context, contractID, contractVer, key, fcn = 'query') {
-        commUtils.log('==== Corda ==== queryState', context, contractID, contractVer, key, fcn);
+        // commUtils.log('==== Corda ==== queryState', context, contractID, contractVer, key, fcn);
         // TODO add grpc logic here for query token state.
+        if(context.engine) {
+            context.engine.submitCallback(1);
+        }
         let txStatus = new TxStatus(key);
         txStatus.SetResult('queryState_' + key);
         txStatus.SetStatusSuccess();
