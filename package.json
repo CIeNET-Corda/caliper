@@ -39,7 +39,9 @@
     "systeminformation": "^3.23.7",
     "table": "^4.0.1",
     "tape": "^4.8.0",
-    "tape-promise": "^1.1.0"
+    "tape-promise": "^1.1.0",
+    "grpc": "1.11.0",
+    "@grpc/proto-loader": "0.3.0"
   },
   "devDependencies": {
     "chai": "^3.5.0",

@@ -10,7 +10,8 @@
 
 const BlockchainInterface = require('../comm/blockchain-interface.js');
 const commUtils = require('../comm/util');
-const TxStatus = require('../comm/transaction');
+
+const gRPCClient = require('./gRPCClient.js');
 
 /**
  * Implements {BlockchainInterface} for a Corda backend.
@@ -31,6 +32,7 @@ class Corda extends BlockchainInterface{
      */
     init() {
         // commUtils.log('==== Corda ==== init');
+        gRPCClient.init('');
         return Promise.resolve();
     }
 
@@ -79,19 +81,7 @@ class Corda extends BlockchainInterface{
         // TODO add grpc logic here for issue token.
         let promises = [];
         for (let i=0; i<args.length; i++) {
-            if(context.engine) {
-                context.engine.submitCallback(1);
-            }
-            let txID = args[i].account + Date.now().toString();
-            let txStatus = new TxStatus(txID);
-            txStatus.SetFlag(0);
-            txStatus.Set('time_endorse', Date.now());
-            txStatus.SetResult('invokeSmartContract_txId_' + txID);
-            txStatus.SetVerification(true);
-            txStatus.Set('time_order', Date.now());
-            txStatus.Set('status', 'submitted');
-            txStatus.SetStatusSuccess();
-            promises.push(Promise.resolve(txStatus));
+            promises.push(gRPCClient.invokebycontext(context, contractID, contractVer, args[i], timeout));
         }
         // commUtils.log(txStats);
         return Promise.all(promises);
@@ -109,13 +99,26 @@ class Corda extends BlockchainInterface{
     queryState(context, contractID, contractVer, key, fcn = 'query') {
         // commUtils.log('==== Corda ==== queryState', context, contractID, contractVer, key, fcn);
         // TODO add grpc logic here for query token state.
-        if(context.engine) {
-            context.engine.submitCallback(1);
-        }
-        let txStatus = new TxStatus(key);
-        txStatus.SetResult('queryState_' + key);
-        txStatus.SetStatusSuccess();
-        return Promise.resolve(txStatus);
+        return Promise.resolve(gRPCClient.querybycontext(context, contractID, contractVer, key, fcn));
     }
 }
 module.exports = Corda;
+
+if (typeof require !== 'undefined' && require.main === module) {
+    let cordaClient = new Corda('');
+    cordaClient.init().then(
+        ()=>{
+            // context, contractID, contractVer, args, timeout
+            cordaClient.invokeSmartContract(Object(), '', '', Array({account:''}, {account:''}), 0).then(
+                (status)=>{
+                    status.forEach(element => {
+                        commUtils.log('==== Corda Main ==== invokeSmartContract', element.GetStatus());});
+                });
+        }).then(
+        ()=> {
+            // context, contractID, contractVer, key, fcn
+            cordaClient.queryState(Object(), '', '', '', '').then(element => {
+                commUtils.log('==== Corda Main ==== queryState', element.GetStatus());
+            });
+        });
+}
