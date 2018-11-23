@@ -20,15 +20,15 @@ const packageDefinition = protoLoader.loadSync(
 
 const np_proto = grpc.loadPackageDefinition(packageDefinition).np;
 
-let client = null;
+let client = new np_proto.NPGRPCAdapter('localhost:50051', grpc.credentials.createInsecure());;
 
 /**
  * Initialize the Fabric client configuration.
  * @param {string} config_path The path of the Fabric network configuration file.
  */
 function init(config_path) {
-    commUtils.log('==== Corda ==== NPGRPCAdapter init');
-    client = new np_proto.NPGRPCAdapter('localhost:50051', grpc.credentials.createInsecure());
+    // commUtils.log('==== Corda ==== NPGRPCAdapter init');
+    // client = 
 }
 
 module.exports.init = init;
@@ -51,6 +51,9 @@ async function invokebycontext(context, id, version, args, timeout){
     txStatus.Set('time_endorse', Date.now());
     txStatus.SetResult('invokeSmartContract_txId_' + txID);
     txStatus.SetVerification(true);
+    if (client === null || client === 'undefined') {
+        commUtils.log('Greeting: no client found.');
+    }
     try {
         const processNPReq = () =>
             new Promise((resolve, reject) => client.processNPReq({inputs: args}, function(err, response) {
@@ -62,18 +65,21 @@ async function invokebycontext(context, id, version, args, timeout){
                 commUtils.log('Greeting:', response.output);
                 resolve();
             }));
+        commUtils.log('==== Corda ==== await processNPReq');
         await processNPReq();
+        commUtils.log('==== Corda ==== await processNPReq Done');
         txStatus.Set('time_order', Date.now());
         txStatus.Set('status', 'submitted');
         txStatus.SetStatusSuccess();
     } catch (err)
     {
         txStatus.SetStatusFail();
-        // commUtils.log('Failed to complete transaction [' + txID.substring(0, 5) + '...]:' + (err instanceof Error ? err.stack : err));
+        commUtils.log('Failed to complete transaction [' + txID.substring(0, 5) + '...]:' + (err instanceof Error ? err.stack : err));
     }
-    if(context.engine) {
+    if(context !== null && context.engine) {
         context.engine.submitCallback(1);
     }
+    commUtils.log('==== Corda ==== return txStatus');
     return txStatus;
 }
 
@@ -89,17 +95,17 @@ module.exports.invokebycontext = invokebycontext;
  * @return {Promise<object>} The result and stats of the transaction invocation.
  */
 async function querybycontext(context, id, version, name, fcn) {
-
+    name = name.split(' ');
     let txStatus = new TxStatus(id);
     try {
         const processNPReq = () =>
-            new Promise((resolve, reject) => client.processNPReq({inputs: ''}, function(err, response) {
+            new Promise((resolve, reject) => client.processNPReq({inputs: name}, function(err, response) {
                 if (err) {
-                    // commUtils.log('Greeting err:', err);
+                    commUtils.log('Greeting err:', err);
                     reject();
                     return;
                 }
-                // commUtils.log('Greeting:', response.output);
+                commUtils.log('Greeting:', response.output);
                 resolve();
             }));
         await processNPReq();
@@ -108,9 +114,9 @@ async function querybycontext(context, id, version, name, fcn) {
     } catch (err)
     {
         txStatus.SetStatusFail();
-        // commUtils.log('Failed to complete transaction [' + id.substring(0, 5) + '...]:' + (err instanceof Error ? err.stack : err));
+        commUtils.log('Failed to complete transaction [' + id.substring(0, 5) + '...]:' + (err instanceof Error ? err.stack : err));
     }
-    if(context.engine) {
+    if(context !== null && context.engine) {
         context.engine.submitCallback(1);
     }
     return txStatus;

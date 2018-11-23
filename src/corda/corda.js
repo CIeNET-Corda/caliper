@@ -99,7 +99,12 @@ class Corda extends BlockchainInterface{
     queryState(context, contractID, contractVer, key, fcn = 'query') {
         // commUtils.log('==== Corda ==== queryState', context, contractID, contractVer, key, fcn);
         // TODO add grpc logic here for query token state.
-        return Promise.resolve(gRPCClient.querybycontext(context, contractID, contractVer, key, fcn));
+        let promises = [];
+        for (let i=0; i<key.length; i++) {
+            promises.push(gRPCClient.querybycontext(context, contractID, contractVer, key[i], fcn));
+        }
+        // commUtils.log(txStats);
+        return Promise.all(promises);
     }
 }
 module.exports = Corda;
@@ -109,16 +114,20 @@ if (typeof require !== 'undefined' && require.main === module) {
     cordaClient.init().then(
         ()=>{
             // context, contractID, contractVer, args, timeout
-            cordaClient.invokeSmartContract(Object(), '', '', Array({account:''}, {account:''}), 0).then(
+            cordaClient.invokeSmartContract(null, '', '', Array('1 2 3 4', '5 6 7 8'), 0).then(
                 (status)=>{
                     status.forEach(element => {
-                        commUtils.log('==== Corda Main ==== invokeSmartContract', element.GetStatus());});
+                        commUtils.log('==== Corda Main ==== invokeSmartContract', element.GetStatus());
+                    });
                 });
         }).then(
         ()=> {
             // context, contractID, contractVer, key, fcn
-            cordaClient.queryState(Object(), '', '', '', '').then(element => {
-                commUtils.log('==== Corda Main ==== queryState', element.GetStatus());
-            });
+            cordaClient.queryState(null, '', '', Array('1 2 3 4', '5 6 7 8'), '').then(
+                (status) => {
+                    status.forEach(element => {
+                        commUtils.log('==== Corda Main ==== queryState', element.GetStatus());
+                    });
+                });
         });
 }
