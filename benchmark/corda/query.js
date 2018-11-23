@@ -32,11 +32,13 @@ module.exports.init = function(blockchain, context, args) {
 function generateWorkload(parties) {
     let workload = [];
     for(let i= 0; i < parties.length; i++) {
-        let acc = {
-            'action': 'iou_query',
-            'from': parties[i]
-        };
-        workload.push(acc);
+        if (!parties[i].hasOwnProperty('number')) {
+            parties[i].number = parties[i].prefix * 100000000;
+        }
+        //  --address 10.10.11.7:10006 --flow-name access --number 18600123456
+        let command = require('util').format(' --address %s --flow-name queryByNumber --number %d', parties[i].address, parties[i].number);
+        parties[i].number += 1;
+        workload.push(command);
     }
     return workload;
 }

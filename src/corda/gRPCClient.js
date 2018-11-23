@@ -27,6 +27,7 @@ let client = null;
  * @param {string} config_path The path of the Fabric network configuration file.
  */
 function init(config_path) {
+    commUtils.log('==== Corda ==== NPGRPCAdapter init');
     client = new np_proto.NPGRPCAdapter('localhost:50051', grpc.credentials.createInsecure());
 }
 
@@ -42,7 +43,9 @@ module.exports.init = init;
  * @return {Promise<TxStatus>} The result and stats of the transaction invocation.
  */
 async function invokebycontext(context, id, version, args, timeout){
-    let txID = args.account + Date.now().toString();
+    args = args.split(' ');
+    // commUtils.log('==== Corda ==== invokebycontext', context, args, args.length, timeout);
+    let txID = Date.now().toString();
     let txStatus = new TxStatus(txID);
     txStatus.SetFlag(0);
     txStatus.Set('time_endorse', Date.now());
@@ -50,26 +53,26 @@ async function invokebycontext(context, id, version, args, timeout){
     txStatus.SetVerification(true);
     try {
         const processNPReq = () =>
-            new Promise((resolve, reject) => client.processNPReq({inputs: ''}, function(err, response) {
+            new Promise((resolve, reject) => client.processNPReq({inputs: args}, function(err, response) {
                 if (err) {
-                    // commUtils.log('Greeting err:', err);
+                    commUtils.log('Greeting err:', err);
                     reject();
                     return;
                 }
-                // commUtils.log('Greeting:', response.output);
+                commUtils.log('Greeting:', response.output);
                 resolve();
             }));
         await processNPReq();
         txStatus.Set('time_order', Date.now());
         txStatus.Set('status', 'submitted');
         txStatus.SetStatusSuccess();
-        if(context.engine) {
-            context.engine.submitCallback(1);
-        }
     } catch (err)
     {
         txStatus.SetStatusFail();
         // commUtils.log('Failed to complete transaction [' + txID.substring(0, 5) + '...]:' + (err instanceof Error ? err.stack : err));
+    }
+    if(context.engine) {
+        context.engine.submitCallback(1);
     }
     return txStatus;
 }
@@ -102,13 +105,13 @@ async function querybycontext(context, id, version, name, fcn) {
         await processNPReq();
         txStatus.SetResult('queryState_' + id);
         txStatus.SetStatusSuccess();
-        if(context.engine) {
-            context.engine.submitCallback(1);
-        }
     } catch (err)
     {
         txStatus.SetStatusFail();
         // commUtils.log('Failed to complete transaction [' + id.substring(0, 5) + '...]:' + (err instanceof Error ? err.stack : err));
+    }
+    if(context.engine) {
+        context.engine.submitCallback(1);
     }
     return txStatus;
 }

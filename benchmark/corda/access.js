@@ -9,20 +9,16 @@
 
 const Util = require('../../src/comm/util');
 
-module.exports.info  = 'opening accounts';
+module.exports.info  = 'number accessing';
 
 let initMoney;
 let bc, contx;
 let parties;
-//args <- config.json-test-rounds-"label":"iou"-arguments
+//args <- config.json-test-rounds-"label":"access"-arguments
 module.exports.init = function(blockchain, context, args) {
-    if(!args.hasOwnProperty('money')) {
-        return Promise.reject(new Error('simple.iou - \'money\' is missed in the arguments'));
-    }
     if(!args.hasOwnProperty('parties')) {
-        return Promise.reject(new Error('simple.iou - \'parties\' is missed in the arguments'));
+        return Promise.reject(new Error('simple.access - \'parties\' is missed in the arguments'));
     }
-    initMoney = args.money;
     parties = args.parties;
     // Util.log('==== Corda ==== parties', parties);
     bc = blockchain;
@@ -37,23 +33,14 @@ module.exports.init = function(blockchain, context, args) {
  */
 function generateWorkload(parties) {
     let workload = [];
-    for(let i= 0; i < parties.length-1; i++) {
-        for(let j=i+1; j < parties.length; j++) {
-            let acc = {
-                'action': 'iou',
-                'from': parties[i],
-                'to': parties[j],
-                'money': initMoney
-            };
-            workload.push(acc);
-            let acc_2 = {
-                'action': 'iou',
-                'from': parties[j],
-                'to': parties[i],
-                'money': initMoney
-            };
-            workload.push(acc_2);
+    for(let i= 0; i < parties.length; i++) {
+        if (!parties[i].hasOwnProperty('number')) {
+            parties[i].number = parties[i].prefix * 100000000;
         }
+        //  --address 10.10.11.7:10006 --flow-name access --number 18600123456
+        let command = require('util').format(' --address %s --flow-name access --number %d', parties[i].address, parties[i].number);
+        parties[i].number += 1;
+        workload.push(command);
     }
     return workload;
 }

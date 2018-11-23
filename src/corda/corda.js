@@ -31,7 +31,7 @@ class Corda extends BlockchainInterface{
      * @return {Promise} The return promise.
      */
     init() {
-        // commUtils.log('==== Corda ==== init');
+        commUtils.log('==== Corda ==== init');
         gRPCClient.init('');
         return Promise.resolve();
     }
