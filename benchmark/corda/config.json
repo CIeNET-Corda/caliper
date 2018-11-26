@@ -15,7 +15,20 @@
       "number": 5
     },
     "rounds": [{
-        "label" : "iou",
+        "label" : "access",
+        "txNumber" : [10],
+        "rateControl" : [{"type": "fixed-rate", "opts": {"tps" : 1}}],
+        "arguments": {
+          "parties": [
+            { "name":"CMCC", "address":"127.0.0.1:10006", "prefix": 139},
+            { "name":"CUCC", "address":"127.0.0.1:10009", "prefix": 186},
+            { "name":"CTCC", "address":"127.0.0.1:10012", "prefix": 141}
+          ]
+        },
+        "callback" : "benchmark/corda/access.js"
+      },
+      {
+        "label" : "access",
         "txNumber" : [1000, 1000, 1000],
         "rateControl" : [{"type": "fixed-rate", "opts": {"tps" : 50}}, {"type": "fixed-rate", "opts": {"tps" : 100}}, {"type": "fixed-rate", "opts": {"tps" : 150}}],
         "arguments": {

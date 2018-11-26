@@ -1,4 +1,5 @@
 {
   "corda": {
+    "sleepBeforeTesting": 60
   }
 }

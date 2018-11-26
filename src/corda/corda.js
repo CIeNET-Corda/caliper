@@ -13,6 +13,8 @@ const commUtils = require('../comm/util');
 
 const gRPCClient = require('./gRPCClient.js');
 
+let configPath;
+
 /**
  * Implements {BlockchainInterface} for a Corda backend.
  */
@@ -22,8 +24,9 @@ class Corda extends BlockchainInterface{
      * @param {string} config_path The path of the Corda network configuration file.
      */
     constructor(config_path) {
-        // commUtils.log('==== Corda ==== config_path:', config_path);
+        commUtils.log('==== Corda ==== config_path:', config_path);
         super(config_path);
+        configPath = config_path;
     }
 
     /**
@@ -31,9 +34,12 @@ class Corda extends BlockchainInterface{
      * @return {Promise} The return promise.
      */
     init() {
-        commUtils.log('==== Corda ==== init');
-        gRPCClient.init('');
-        return Promise.resolve();
+        // commUtils.log('==== Corda ==== init');
+        // TODO wait 60s for Corad is stated up.
+        let config = require(configPath);
+        let sleepTime = config.corda.sleepBeforeTesting;
+        commUtils.log('==== Corda ==== init Sleep %s(s)......', sleepTime);
+        return commUtils.sleep(sleepTime*1000);
     }
 
     /**
@@ -52,9 +58,8 @@ class Corda extends BlockchainInterface{
      * @return {object} The assembled Corda context.
      */
     getContext(name, args) {
-        commUtils.log('==== Corda ==== getContext', name, args);
-        //TODO create gRPC client
-        return Promise.resolve();
+        // commUtils.log('==== Corda ==== getContext', name, args);
+        return gRPCClient.getClient();
     }
 
     /**
@@ -63,7 +68,7 @@ class Corda extends BlockchainInterface{
      * @return {Promise} The return promise.
      */
     releaseContext(context) {
-        commUtils.log('==== Corda ==== releaseContext', context);
+        // commUtils.log('==== Corda ==== releaseContext', context);
         return Promise.resolve();
     }
 
@@ -80,9 +85,9 @@ class Corda extends BlockchainInterface{
         // commUtils.log('==== Corda ==== invokeSmartContract', contractID, contractVer, args, args.length, timeout);
         // TODO add grpc logic here for issue token.
         let promises = [];
-        for (let i=0; i<args.length; i++) {
-            promises.push(gRPCClient.invokebycontext(context, contractID, contractVer, args[i], timeout));
-        }
+        args.forEach((item, _)=>{
+            promises.push(gRPCClient.invokebycontext(context, contractID, contractVer, item, timeout));
+        });
         // commUtils.log(txStats);
         return Promise.all(promises);
     }
@@ -100,9 +105,9 @@ class Corda extends BlockchainInterface{
         // commUtils.log('==== Corda ==== queryState', context, contractID, contractVer, key, fcn);
         // TODO add grpc logic here for query token state.
         let promises = [];
-        for (let i=0; i<key.length; i++) {
-            promises.push(gRPCClient.querybycontext(context, contractID, contractVer, key[i], fcn));
-        }
+        key.forEach((item, _)=>{
+            promises.push(gRPCClient.querybycontext(context, contractID, contractVer, item, fcn));
+        });
         // commUtils.log(txStats);
         return Promise.all(promises);
     }
@@ -111,23 +116,26 @@ module.exports = Corda;
 
 if (typeof require !== 'undefined' && require.main === module) {
     let cordaClient = new Corda('');
-    cordaClient.init().then(
-        ()=>{
-            // context, contractID, contractVer, args, timeout
-            cordaClient.invokeSmartContract(null, '', '', Array('1 2 3 4', '5 6 7 8'), 0).then(
-                (status)=>{
-                    status.forEach(element => {
-                        commUtils.log('==== Corda Main ==== invokeSmartContract', element.GetStatus());
-                    });
-                });
-        }).then(
-        ()=> {
-            // context, contractID, contractVer, key, fcn
-            cordaClient.queryState(null, '', '', Array('1 2 3 4', '5 6 7 8'), '').then(
-                (status) => {
-                    status.forEach(element => {
-                        commUtils.log('==== Corda Main ==== queryState', element.GetStatus());
-                    });
-                });
+
+    let g_context = null;
+
+    const afterQueryState = (status) => {
+        status.forEach(element => {
+            commUtils.log('==== Corda Main ==== queryState', element.GetStatus());
         });
+    };
+
+    const afterInvokeSmartContract = (status) => {
+        status.forEach(element => {
+            commUtils.log('==== Corda Main ==== invokeSmartContract', element.GetStatus());
+        });
+        cordaClient.queryState(g_context, '', '', Array('--address 127.0.0.1:10009 --flow-name access --number 13000000000'), '').then(afterQueryState);
+    };
+
+    const afterGotContext = (context) => {
+        g_context = context;
+        cordaClient.invokeSmartContract(g_context, '', '', Array('--address 127.0.0.1:10009 --flow-name access --number 13000000000'), 0).then(afterInvokeSmartContract);
+    };
+
+    cordaClient.getContext().then(afterGotContext);
 }

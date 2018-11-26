@@ -1,0 +1,45 @@
+{
+  "blockchain": {
+    "type": "corda",
+    "config": "benchmark/corda/corda.json"
+  },
+  "command" : {
+    "start": "docker ps -a",
+    "end" : "docker ps -a"
+  },
+  "test": {
+    "name": "simple",
+    "description" : "This is an example benchmark for Corda, to test the performance with iou & querying transactions",
+    "clients": {
+      "type": "local",
+      "number": 1
+    },
+    "rounds": [{
+        "label" : "access",
+        "txNumber" : [1],
+        "rateControl" : [{"type": "fixed-rate", "opts": {"tps" : 1}}],
+        "arguments": {
+          "parties": [
+            { "name":"CMCC", "address":"127.0.0.1:10006", "prefix": 139},
+            { "name":"CUCC", "address":"127.0.0.1:10009", "prefix": 186},
+            { "name":"CTCC", "address":"127.0.0.1:10012", "prefix": 141}
+          ]
+        },
+        "callback" : "benchmark/corda/access.js"
+      }]
+  },
+  "monitor": {
+    "type": ["docker", "process"],
+    "docker":{
+      "name": ["all"]
+    },
+    "process": [
+      {
+        "command" : "node",
+        "arguments" : "local-client.js",
+        "multiOutput" : "avg"
+      }
+    ],
+    "interval": 1
+  }
+}

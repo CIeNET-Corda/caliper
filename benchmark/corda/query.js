@@ -36,7 +36,7 @@ function generateWorkload(parties) {
             parties[i].number = parties[i].prefix * 100000000;
         }
         //  --address 10.10.11.7:10006 --flow-name access --number 18600123456
-        let command = require('util').format(' --address %s --flow-name queryByNumber --number %d', parties[i].address, parties[i].number);
+        let command = require('util').format('--address %s --flow-name queryByNumber --number %d', parties[i].address, parties[i].number);
         parties[i].number += 1;
         workload.push(command);
     }
