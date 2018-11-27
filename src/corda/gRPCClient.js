@@ -7,16 +7,6 @@ const TxStatus  = require('../comm/transaction');
 const PROTO_PATH = __dirname + '/proto/np.proto';
 
 const grpc = require('grpc');
-const protoLoader = require('@grpc/proto-loader');
-const packageDefinition = protoLoader.loadSync(
-    PROTO_PATH,
-    {
-        keepCase: true,
-        longs: String,
-        enums: String,
-        defaults: true,
-        oneofs: true
-    });
 
 /**
  * Return the context associated with the given callback module name.
@@ -24,7 +14,7 @@ const packageDefinition = protoLoader.loadSync(
  */
 function getClient() {
     // commUtils.log('==== Corda ==== getClient');
-    const np_proto = grpc.loadPackageDefinition(packageDefinition).np;
+    const np_proto = grpc.load(PROTO_PATH).np;
     let client = new np_proto.NPGRPCAdapter('localhost:50051', grpc.credentials.createInsecure());
     return Promise.resolve({client: client});
 }
@@ -115,6 +105,7 @@ async function querybycontext(context, id, version, name, fcn) {
         };
         const processNPReq = () =>
             new Promise((resolve, reject) => context.client.processNPReq({inputs: name}, function(err, response) {
+                commUtils.log('processNPReq');
                 if (err) {
                     reject(err);
                     return;
