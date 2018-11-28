@@ -32,22 +32,23 @@ module.exports.getClient = getClient;
  */
 async function invokebycontext(context, id, version, args, timeout){
     args = args.split(' ');
-    commUtils.log('==== Corda ==== invokebycontext', context, args, args.length, timeout);
+    // commUtils.log('==== Corda ==== invokebycontext', context, args, args.length, timeout);
     let txID = Date.now().toString();
     let txStatus = new TxStatus(txID);
     txStatus.SetFlag(0);
     txStatus.Set('time_endorse', Date.now());
     txStatus.SetResult('invokeSmartContract_txId_' + txID);
-    txStatus.SetVerification(true);
+    // txStatus.SetVerification(true);
     if (context.client === null || context.client === 'undefined') {
         commUtils.log('Greeting: no client found.');
     }
     if(context && context.engine) {
         context.engine.submitCallback(1);
     }
+    txStatus.Set('status', 'submitted');
     try {
         const resolved = (response) => {
-            commUtils.log('Greeting:', response.output);
+            // commUtils.log('Greeting:', response.output);
             txStatus.Set('time_order', Date.now());
             txStatus.Set('status', 'submitted');
             txStatus.SetStatusSuccess();
@@ -58,21 +59,21 @@ async function invokebycontext(context, id, version, args, timeout){
         };
         const processNPReq = () =>
             new Promise((resolve, reject) => context.client.processNPReq({inputs: args}, function(err, response) {
-                commUtils.log('processNPReq');
+                // commUtils.log('processNPReq');
                 if (err) {
                     reject(err);
                     return;
                 }
                 resolve(response);
             }));
-        commUtils.log('==== Corda ==== await processNPReq');
-        processNPReq().then(resolved, rejected);
-        commUtils.log('==== Corda ==== await processNPReq Done');
+        // commUtils.log('==== Corda ==== await processNPReq');
+        await processNPReq().then(resolved, rejected).catch((reason)=>{commUtils.log('ProcessNPReq Exception:', reason);});
+        // commUtils.log('==== Corda ==== await processNPReq Done');
     } catch (err)
     {
         commUtils.log('Failed to complete transaction [' + txID.substring(0, 5) + '...]:' + (err instanceof Error ? err.stack : err));
     }
-    commUtils.log('==== Corda ==== return txStatus');
+    // commUtils.log('==== Corda ==== return txStatus', txStatus.status);
     return txStatus;
 }
 
