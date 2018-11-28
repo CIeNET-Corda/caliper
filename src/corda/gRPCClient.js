@@ -52,10 +52,12 @@ async function invokebycontext(context, id, version, args, timeout){
             txStatus.Set('time_order', Date.now());
             txStatus.Set('status', 'submitted');
             txStatus.SetStatusSuccess();
+            return txStatus;
         };
         const rejected = (err) => {
             commUtils.log('Greeting err:', err);
             txStatus.SetStatusFail();
+            return txStatus;
         };
         const processNPReq = () =>
             new Promise((resolve, reject) => context.client.processNPReq({inputs: args}, function(err, response) {
@@ -67,7 +69,7 @@ async function invokebycontext(context, id, version, args, timeout){
                 resolve(response);
             }));
         // commUtils.log('==== Corda ==== await processNPReq');
-        await processNPReq().then(resolved, rejected).catch((reason)=>{commUtils.log('ProcessNPReq Exception:', reason);});
+        return processNPReq().then(resolved, rejected).catch((reason)=>{commUtils.log('ProcessNPReq Exception:', reason);});
         // commUtils.log('==== Corda ==== await processNPReq Done');
     } catch (err)
     {
